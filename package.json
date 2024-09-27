@@ -1,9 +1,9 @@
 {
   "name": "git-version-manage",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -11,5 +11,8 @@
   "description": "",
   "dependencies": {
     "axios": "^1.7.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2"
   }
 }

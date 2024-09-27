@@ -1,21 +1,31 @@
 
-export interface CommonParams {
+export interface Options {
   repositoryId?:string,
+  //pt-5AHzOk4oNvuzBzVjmEImVHC0_328cb285-14cc-493d-b347-0ab63c9a0c81
   accessToken?:string,
   organizationId?:string,
 }
 
+
+type PlatformOptions = 'android' | 'ios'
 export interface CreateReleaseParams {
   versionName:string,
   message:{
     title:string,
     url:string,
-    content?:string
+    platform:PlatformOptions,
+    content?:string,
   }
 }
-
 export interface DeleteReleaseParams {
   versionName:string
+}
+
+export interface CheckVersionParams {
+  currentVersion:string,
+  platform:PlatformOptions,
+  page?:1,
+  pageSize?:2,
 }
 
 enum SortTypeEnum {

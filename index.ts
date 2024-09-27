@@ -4,32 +4,32 @@ import {
   DeleteReleaseParams,
   ShowListParams,
   CreateReleaseParams,
-  CommonParams,
+  Options,
+  CheckVersionParams
 } from "./types";
+import { formatVersionName,compareVersion } from "./helper";
 
 class Logger {
-  static log(...arg) {
+  static log(...arg:any) {
     console.log(...arg);
   }
-  static error(...arg){
+  static error(...arg:any){
     console.error(...arg)
   }
 }
 
 class Gvm {
-  request: AxiosInstance;
-  repositoryId: string;
-  organizationId: string;
-  accessToken:string;
+  request!: AxiosInstance;
+  options!: Options;
   ref = 'master';
   static _instance: Gvm;
 
-  constructor(params:CommonParams) {
+  constructor(options:Options) {
     if (Gvm._instance instanceof Gvm) return Gvm._instance;
     this.request = axios.create({
       baseURL: BASE_URL,
     });
-    Object.assign(this,params)
+    this.options = options
     Gvm._instance = this;
   }
 
@@ -44,17 +44,15 @@ class Gvm {
     const {versionName,message} = data
 
     const body = {
-      tagName:versionName,
+      tagName:`${message.platform}-${formatVersionName(versionName)}`,
       ref:this.ref,
       message:JSON.stringify(message)
     }
     const params = {
-      organizationId:this.organizationId,
-      repositoryId:this.repositoryId,
-      accessToken:this.accessToken,
+      ...this.options,
       body
     }
-    return this.request.post(`/repository/${this.repositoryId}/tags/create`,params);
+    return this.request.post(`/repository/${this.options.repositoryId}/tags/create`,params);
   }
 
   /**
@@ -66,12 +64,10 @@ class Gvm {
     data: DeleteReleaseParams
   ): Promise<Record<string, any>> {
     const params = {
-      repositoryId:this.repositoryId,
-      organizationId:this.organizationId,
-      accessToken:this.accessToken,
+      ...this.options,
       tagName:data.versionName,
     }
-    return this.request.delete(`/repository/${this.repositoryId}/tags/delete`,{ params });
+    return this.request.delete(`/repository/${this.options.repositoryId}/tags/delete`,{ params });
   }
 
   /**
@@ -81,16 +77,60 @@ class Gvm {
    */
   showList(data: ShowListParams) {
     const params = {
-      repositoryId:this.repositoryId,
-      organizationId:this.organizationId,
-      accessToken:this.accessToken,
+      ...this.options,
       ...data
     }
-    return this.request.get(`/repository/${this.repositoryId}/tag/list`,{ params });
+    return this.request.get(`/repository/${this.options.repositoryId}/tag/list`,{ params });
+  }
+
+
+  /**
+   * 检查是否有更新
+   * @param data 
+   * @returns 
+   */
+  async checkVersion(data:CheckVersionParams){
+    const {currentVersion} = data
+    const params = {
+      ...this.options,
+      search:data.platform,
+      ...data
+    }
+    try{
+      const { data:{result} } = await this.request.get(
+        `/repository/${this.options.repositoryId}/tag/list`,
+        {params}
+      )
+      if(result.length){
+        const release = result.find((item:any)=>{
+          const version = item.name.split('-')[1]
+          return compareVersion(currentVersion,version)
+        })
+        if(release){
+          return {
+            success:true,
+            version:release.name.split('-')[1],
+            data:JSON.parse(release.message)
+          }
+        }else{
+          return {
+            success:true
+          }
+        }
+      }else{
+        return {
+          success:true
+        }
+      }
+    }catch(err){
+      return {
+        success:false,
+      }
+    }
   }
 }
 
-export const init = (params:CommonParams) => new Gvm(params);
+export const init = (params:Options) => new Gvm(params);
 
 export const createRelease = (params: CreateReleaseParams) => {
   if (!Gvm._instance) return Logger.error("实例不存在");
