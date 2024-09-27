@@ -18,8 +18,10 @@ class Logger {
 
 class Gvm {
   request: AxiosInstance;
-  repositoryId?: string;
-  organizationId?: string;
+  repositoryId: string;
+  organizationId: string;
+  accessToken:string;
+  ref = 'master';
   static _instance: Gvm;
 
   constructor(params:CommonParams) {
@@ -36,17 +38,23 @@ class Gvm {
    * @param params
    * @returns
    */
-  async createRelease(
-    params: CreateReleaseParams
+  createRelease(
+    data: CreateReleaseParams
   ): Promise<Record<string, any>> {
-    params.repositoryId = params.repositoryId || this.repositoryId;
-    params.organizationId = params.organizationId || this.organizationId;
-    const res = await this.request.post(
-      `/repository/${params.repositoryId}/tags/create`,
-      params
-    );
-    Logger.log(res);
-    return res;
+    const {versionName,message} = data
+
+    const body = {
+      tagName:versionName,
+      ref:this.ref,
+      message:JSON.stringify(message)
+    }
+    const params = {
+      organizationId:this.organizationId,
+      repositoryId:this.repositoryId,
+      accessToken:this.accessToken,
+      body
+    }
+    return this.request.post(`/repository/${this.repositoryId}/tags/create`,params);
   }
 
   /**
@@ -54,17 +62,16 @@ class Gvm {
    * @param params
    * @returns
    */
-  async deleteRelease(
-    params: DeleteReleaseParams
+  deleteRelease(
+    data: DeleteReleaseParams
   ): Promise<Record<string, any>> {
-    params.repositoryId = params.repositoryId || this.repositoryId;
-    params.organizationId = params.organizationId || this.organizationId;
-    const res = await this.request.delete(
-      `/repository/${params.repositoryId}/tags/delete`,
-      { params }
-    );
-    Logger.log(res);
-    return res;
+    const params = {
+      repositoryId:this.repositoryId,
+      organizationId:this.organizationId,
+      accessToken:this.accessToken,
+      tagName:data.versionName,
+    }
+    return this.request.delete(`/repository/${this.repositoryId}/tags/delete`,{ params });
   }
 
   /**
@@ -72,19 +79,18 @@ class Gvm {
    * @param params
    * @returns
    */
-  async showList(params: ShowListParams) {
-    params.repositoryId = params.repositoryId || this.repositoryId;
-    params.organizationId = params.organizationId || this.organizationId;
-    const res = await this.request.get(
-      `/repository/${params.repositoryId}/tag/list`,
-      { params }
-    );
-    Logger.log(res);
-    return res;
+  showList(data: ShowListParams) {
+    const params = {
+      repositoryId:this.repositoryId,
+      organizationId:this.organizationId,
+      accessToken:this.accessToken,
+      ...data
+    }
+    return this.request.get(`/repository/${this.repositoryId}/tag/list`,{ params });
   }
 }
 
-export const initGvm = (params:CommonParams) => new Gvm(params);
+export const init = (params:CommonParams) => new Gvm(params);
 
 export const createRelease = (params: CreateReleaseParams) => {
   if (!Gvm._instance) return Logger.error("实例不存在");

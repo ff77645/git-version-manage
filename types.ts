@@ -5,16 +5,17 @@ export interface CommonParams {
   organizationId?:string,
 }
 
-export interface CreateReleaseParams extends CommonParams {
-  body:{
-    tagName:string,
-    ref:string,
-    message:string
+export interface CreateReleaseParams {
+  versionName:string,
+  message:{
+    title:string,
+    url:string,
+    content?:string
   }
 }
 
-export interface DeleteReleaseParams extends CommonParams {
-  tagName:string
+export interface DeleteReleaseParams {
+  versionName:string
 }
 
 enum SortTypeEnum {
@@ -25,7 +26,7 @@ enum SortTypeEnum {
 }
 
 
-export interface ShowListParams extends CommonParams {
+export interface ShowListParams {
   page?:1,
   pageSize?:10,
   sort?:SortTypeEnum.NAME_DESC,
