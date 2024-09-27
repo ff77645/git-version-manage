@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.showList = exports.deleteRelease = exports.createRelease = exports.init = void 0;
+exports.checkVersion = exports.showList = exports.deleteRelease = exports.createRelease = exports.init = void 0;
 const axios_1 = __importDefault(require("axios"));
 const config_1 = require("./config");
 const helper_1 = require("./helper");
@@ -131,3 +131,9 @@ const showList = (params) => {
     return Gvm._instance.showList(params);
 };
 exports.showList = showList;
+const checkVersion = (params) => {
+    if (!Gvm._instance)
+        return Logger.error("实例不存在");
+    return Gvm._instance.checkVersion(params);
+};
+exports.checkVersion = checkVersion;

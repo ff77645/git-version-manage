@@ -43,4 +43,13 @@ export declare const init: (params: Options) => Gvm;
 export declare const createRelease: (params: CreateReleaseParams) => void | Promise<Record<string, any>>;
 export declare const deleteRelease: (params: DeleteReleaseParams) => void | Promise<Record<string, any>>;
 export declare const showList: (params: ShowListParams) => void | Promise<import("axios").AxiosResponse<any, any>>;
+export declare const checkVersion: (params: CheckVersionParams) => void | Promise<{
+    success: boolean;
+    version: any;
+    data: any;
+} | {
+    success: boolean;
+    version?: undefined;
+    data?: undefined;
+}>;
 export {};
