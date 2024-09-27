@@ -146,3 +146,8 @@ export const showList = (params: ShowListParams) => {
   if (!Gvm._instance) return Logger.error("实例不存在");
   return Gvm._instance.showList(params);
 };
+
+export const checkVersion = (params: CheckVersionParams) => {
+  if (!Gvm._instance) return Logger.error("实例不存在");
+  return Gvm._instance.checkVersion(params);
+};
