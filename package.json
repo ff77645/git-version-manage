@@ -10,9 +10,11 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "axios": "^1.7.7"
+    "@alicloud/devops20210625": "^4.19.2"
   },
   "devDependencies": {
+    "dotenv": "^16.4.5",
+    "ts-node": "^10.9.2",
     "typescript": "^5.6.2"
   }
 }

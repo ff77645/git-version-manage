@@ -1,5 +1,3 @@
-import axios, { AxiosInstance } from "axios";
-import { BASE_URL } from "./config";
 import {
   DeleteReleaseParams,
   ShowListParams,
@@ -8,6 +6,9 @@ import {
   CheckVersionParams
 } from "./types";
 import { formatVersionName,compareVersion } from "./helper";
+import devops20210625, * as $devops20210625 from '@alicloud/devops20210625';
+import * as $OpenApi from '@alicloud/openapi-client';
+import * as $Util from '@alicloud/tea-util';
 
 class Logger {
   static log(...arg:any) {
@@ -19,18 +20,25 @@ class Logger {
 }
 
 class Gvm {
-  request!: AxiosInstance;
   options!: Options;
   ref = 'master';
+  client!:devops20210625;
   static _instance: Gvm;
 
   constructor(options:Options) {
     if (Gvm._instance instanceof Gvm) return Gvm._instance;
-    this.request = axios.create({
-      baseURL: BASE_URL,
-    });
     this.options = options
+    this.client = this.createClient(options)
     Gvm._instance = this;
+  }
+
+  createClient({accessKeyId,accessKeySecret}:Options){
+    let config = new $OpenApi.Config({
+      accessKeyId,
+      accessKeySecret,
+    });
+    config.endpoint = `devops.cn-hangzhou.aliyuncs.com`;
+    return new devops20210625(config);
   }
 
   /**
@@ -38,21 +46,28 @@ class Gvm {
    * @param params
    * @returns
    */
-  createRelease(
+  async createRelease(
     data: CreateReleaseParams
   ): Promise<Record<string, any>> {
     const {versionName,message} = data
-
-    const body = {
+    const params = {
+      organizationId: this.options.organizationId,
+      accessToken: this.options.accessToken,
       tagName:`${message.platform}-${formatVersionName(versionName)}`,
       ref:this.ref,
       message:JSON.stringify(message)
     }
-    const params = {
-      ...this.options,
-      body
-    }
-    return this.request.post(`/repository/${this.options.repositoryId}/tags/create`,params);
+    console.log({params});
+    let createTagRequest = new $devops20210625.CreateTagRequest(params);
+    let runtime = new $Util.RuntimeOptions({ });
+    let headers : {[key: string ]: string} = { };
+    const {body} = await this.client.createTagWithOptions(
+      this.options.repositoryId, 
+      createTagRequest, 
+      headers, 
+      runtime
+    )
+    return body as any
   }
 
   /**
@@ -60,14 +75,23 @@ class Gvm {
    * @param params
    * @returns
    */
-  deleteRelease(
+  async deleteRelease(
     data: DeleteReleaseParams
   ): Promise<Record<string, any>> {
-    const params = {
-      ...this.options,
-      tagName:data.versionName,
-    }
-    return this.request.delete(`/repository/${this.options.repositoryId}/tags/delete`,{ params });
+    let deleteTagRequest = new $devops20210625.DeleteTagRequest({
+      organizationId: this.options.organizationId,
+      accessToken: this.options.accessToken,
+      tagName:`${data.platform}-${formatVersionName(data.versionName)}`,
+    });
+    let runtime = new $Util.RuntimeOptions({ });
+    let headers : {[key: string ]: string} = { };
+    const {body} = await this.client.deleteTagWithOptions(
+      this.options.repositoryId, 
+      deleteTagRequest, 
+      headers, 
+      runtime
+    )
+    return body as any
   }
 
   /**
@@ -75,12 +99,24 @@ class Gvm {
    * @param params
    * @returns
    */
-  showList(data: ShowListParams) {
-    const params = {
-      ...this.options,
-      ...data
-    }
-    return this.request.get(`/repository/${this.options.repositoryId}/tag/list`,{ params });
+  async showList(data?: ShowListParams) {
+    data = data || {}
+    const {platform} = data
+    let listRepositoryTagsRequest = new $devops20210625.ListRepositoryTagsRequest({
+      organizationId: this.options.organizationId,
+      accessToken: this.options.accessToken,
+      ...data,
+      search:platform
+    });
+    let runtime = new $Util.RuntimeOptions({ });
+    let headers : {[key: string ]: string} = { };
+    const {body} = await this.client.listRepositoryTagsWithOptions(
+      this.options.repositoryId, 
+      listRepositoryTagsRequest, 
+      headers, 
+      runtime
+    );
+    return body as any
   }
 
 
@@ -90,17 +126,12 @@ class Gvm {
    * @returns 
    */
   async checkVersion(data:CheckVersionParams){
-    const {currentVersion} = data
-    const params = {
-      ...this.options,
-      search:data.platform,
-      ...data
-    }
+    const {currentVersion,platform,...params} = data
     try{
-      const { data:{result} } = await this.request.get(
-        `/repository/${this.options.repositoryId}/tag/list`,
-        {params}
-      )
+      const {result,success} = await this.showList({platform,...params as ShowListParams})
+      if(!success) return {
+        success:false
+      }
       if(result.length){
         const release = result.find((item:any)=>{
           const version = item.name.split('-')[1]
@@ -125,6 +156,7 @@ class Gvm {
     }catch(err){
       return {
         success:false,
+        err:err
       }
     }
   }
@@ -142,7 +174,7 @@ export const deleteRelease = (params: DeleteReleaseParams) => {
   return Gvm._instance.deleteRelease(params);
 };
 
-export const showList = (params: ShowListParams) => {
+export const showList = (params?: ShowListParams) => {
   if (!Gvm._instance) return Logger.error("实例不存在");
   return Gvm._instance.showList(params);
 };

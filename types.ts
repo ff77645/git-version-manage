@@ -1,9 +1,11 @@
 
 export interface Options {
-  repositoryId?:string,
+  repositoryId:string,
   //pt-5AHzOk4oNvuzBzVjmEImVHC0_328cb285-14cc-493d-b347-0ab63c9a0c81
-  accessToken?:string,
-  organizationId?:string,
+  accessToken:string,
+  organizationId:string,
+  accessKeyId:string,
+  accessKeySecret:string,
 }
 
 
@@ -18,7 +20,8 @@ export interface CreateReleaseParams {
   }
 }
 export interface DeleteReleaseParams {
-  versionName:string
+  versionName:string,
+  platform:PlatformOptions,
 }
 
 export interface CheckVersionParams {
@@ -40,5 +43,5 @@ export interface ShowListParams {
   page?:1,
   pageSize?:10,
   sort?:SortTypeEnum.NAME_DESC,
-  search?:string
+  platform?:PlatformOptions,
 }
