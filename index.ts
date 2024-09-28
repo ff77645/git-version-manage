@@ -37,7 +37,7 @@ class Gvm {
       accessKeyId,
       accessKeySecret,
     });
-    config.endpoint = `devops.cn-hangzhou.aliyuncs.com`;
+    config.endpoint = `https://devops.cn-hangzhou.aliyuncs.com`;
     return new devops20210625(config);
   }
 
