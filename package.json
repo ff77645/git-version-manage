@@ -1,7 +1,7 @@
 {
   "name": "git-version-manage",
   "version": "1.0.0",
-  "main": "build/index.js",
+  "main": "index.ts",
   "scripts": {
     "build": "tsc"
   },
