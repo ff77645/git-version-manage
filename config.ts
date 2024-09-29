@@ -1,2 +1,2 @@
 
-export const BASE_URL = 'https://devops.cn-hangzhou.aliyuncs.com'
+export const BASE_URL = 'https://gitee.com/api/v5/repos'

@@ -10,7 +10,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@alicloud/devops20210625": "^4.19.2"
+    "axios": "^1.7.7"
   },
   "devDependencies": {
     "dotenv": "^16.4.5",

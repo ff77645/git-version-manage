@@ -13,25 +13,22 @@ const env: any = process.env;
 
 async function main() {
   init({
-    repositoryId: env.repositoryId,
-    accessToken: env.accessToken,
-    organizationId: env.organizationId,
-    accessKeySecret: env.accessKeySecret,
-    accessKeyId: env.accessKeyId,
+    owner:env.owner,
+    repo:env.repo,
+    access_token:env.access_token,
+    ref:'main'
   });
 
-  // await createRelease({versionName:'1.1.1',message:{title:'测试','url':'123',platform:'android'}})
+  await createRelease({versionName:'1.2.2',body:{title:'测试',url:'123',platform:'android'}})
   // await deleteRelease({
-  //   versionName:'1.1.1',
-  //   platform:'android'
+  //   id:438260,
   // })
 
-  // const res =await checkVersion({
-  //   currentVersion:'1.0',
-  //   platform:'android'
-  // })
+  const res =await checkVersion({
+    currentVersion:'1.0.2',
+  })
 
-  const res = await showList();
+  // const res = await showList();
 
   console.log({ res });
 }

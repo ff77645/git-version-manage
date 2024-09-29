@@ -3,12 +3,11 @@ import {
   ShowListParams,
   CreateReleaseParams,
   Options,
-  CheckVersionParams
+  CheckVersionParams,
 } from "./types";
 import { formatVersionName,compareVersion } from "./helper";
-import devops20210625, * as $devops20210625 from '@alicloud/devops20210625';
-import * as $OpenApi from '@alicloud/openapi-client';
-import * as $Util from '@alicloud/tea-util';
+import axios, { AxiosInstance } from 'axios'
+import {BASE_URL} from './config'
 
 class Logger {
   static log(...arg:any) {
@@ -21,24 +20,17 @@ class Logger {
 
 class Gvm {
   options!: Options;
-  ref = 'master';
-  client!:devops20210625;
+  client!:AxiosInstance;
   static _instance: Gvm;
 
   constructor(options:Options) {
     if (Gvm._instance instanceof Gvm) return Gvm._instance;
     this.options = options
-    this.client = this.createClient(options)
+    this.client = axios.create({
+      baseURL:`${BASE_URL}/${options.owner}/${options.repo}`
+    })
+    this.client.interceptors.response.use(response=>response.data,err=>Promise.reject(err))
     Gvm._instance = this;
-  }
-
-  createClient({accessKeyId,accessKeySecret}:Options){
-    let config = new $OpenApi.Config({
-      accessKeyId,
-      accessKeySecret,
-    });
-    config.endpoint = `devops.cn-hangzhou.aliyuncs.com`;
-    return new devops20210625(config);
   }
 
   /**
@@ -49,25 +41,19 @@ class Gvm {
   async createRelease(
     data: CreateReleaseParams
   ): Promise<Record<string, any>> {
-    const {versionName,message} = data
+    const {versionName,body,prerelease=false} = data
+
     const params = {
-      organizationId: this.options.organizationId,
-      accessToken: this.options.accessToken,
-      tagName:`${message.platform}-${formatVersionName(versionName)}`,
-      ref:this.ref,
-      message:JSON.stringify(message)
+      tag_name:formatVersionName(versionName),
+      name:body.title,
+      body:JSON.stringify(body),
+      prerelease:prerelease,
+      access_token:this.options.access_token,
+      target_commitish:this.options.ref
     }
-    console.log({params});
-    let createTagRequest = new $devops20210625.CreateTagRequest(params);
-    let runtime = new $Util.RuntimeOptions({ });
-    let headers : {[key: string ]: string} = { };
-    const {body} = await this.client.createTagWithOptions(
-      this.options.repositoryId, 
-      createTagRequest, 
-      headers, 
-      runtime
-    )
-    return body as any
+ 
+    const res = await this.client.post('/releases',params)
+    return res
   }
 
   /**
@@ -78,20 +64,13 @@ class Gvm {
   async deleteRelease(
     data: DeleteReleaseParams
   ): Promise<Record<string, any>> {
-    let deleteTagRequest = new $devops20210625.DeleteTagRequest({
-      organizationId: this.options.organizationId,
-      accessToken: this.options.accessToken,
-      tagName:`${data.platform}-${formatVersionName(data.versionName)}`,
-    });
-    let runtime = new $Util.RuntimeOptions({ });
-    let headers : {[key: string ]: string} = { };
-    const {body} = await this.client.deleteTagWithOptions(
-      this.options.repositoryId, 
-      deleteTagRequest, 
-      headers, 
-      runtime
-    )
-    return body as any
+
+    const params = {
+      access_token:this.options.access_token
+    }
+
+    const res = await this.client.delete(`/releases/${data.id}`,{params})
+    return res
   }
 
   /**
@@ -100,23 +79,15 @@ class Gvm {
    * @returns
    */
   async showList(data?: ShowListParams) {
-    data = data || {}
-    const {platform} = data
-    let listRepositoryTagsRequest = new $devops20210625.ListRepositoryTagsRequest({
-      organizationId: this.options.organizationId,
-      accessToken: this.options.accessToken,
-      ...data,
-      search:platform
-    });
-    let runtime = new $Util.RuntimeOptions({ });
-    let headers : {[key: string ]: string} = { };
-    const {body} = await this.client.listRepositoryTagsWithOptions(
-      this.options.repositoryId, 
-      listRepositoryTagsRequest, 
-      headers, 
-      runtime
-    );
-    return body as any
+    const params = {
+      access_token:this.options.access_token,
+      page:data?.page || 1,
+      per_page:data?.per_page || 10,
+      direction:data?.direction || 'desc',
+    }
+   
+    const res = await this.client.get(`/releases`,{params})
+    return res
   }
 
 
@@ -126,32 +97,26 @@ class Gvm {
    * @returns 
    */
   async checkVersion(data:CheckVersionParams){
-    const {currentVersion,platform,...params} = data
+    const {currentVersion} = data
     try{
-      const {result,success} = await this.showList({platform,...params as ShowListParams})
-      if(!success) return {
-        success:false
+      const res:any = await this.client.get(`/releases/latest`,{params:{
+        access_token:this.options.access_token
+      }})
+      if(!res) return {
+        success:false,
+        data:res,
       }
-      if(result.length){
-        const release = result.find((item:any)=>{
-          const version = item.name.split('-')[1]
-          return compareVersion(currentVersion,version)
-        })
-        if(release){
-          return {
-            success:true,
-            version:release.name.split('-')[1],
-            data:JSON.parse(release.message)
-          }
-        }else{
-          return {
-            success:true
-          }
-        }
-      }else{
-        return {
-          success:true
-        }
+      const hasUpdate = compareVersion(currentVersion,res.tag_name)
+      if(hasUpdate) return {
+        success:true,
+        name:res.name,
+        id:res.id,
+        versionName:res.tag_name,
+        prerelease:res.prerelease,
+        body:JSON.parse(res.body)
+      }
+      return {
+        success:true,
       }
     }catch(err){
       return {
