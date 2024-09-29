@@ -107,8 +107,6 @@ class Gvm {
         data:res,
       }
       const hasUpdate = compareVersion(res.tag_name,currentVersion)
-      console.log({res,hasUpdate});
-      
       if(hasUpdate) return {
         success:true,
         name:res.name,
