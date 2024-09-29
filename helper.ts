@@ -13,12 +13,19 @@ export const formatVersionName = (versionName:string):string =>{
 }
 
 
-export const compareVersion = (v1:string,v2:string)=>{
-  const v1_arr = v1.split('.')
-  const v2_arr = v2.split('.')
-  return (
-    v2_arr[0] > v1_arr[0] ||
-    v2_arr[1] > v1_arr[1] ||
-    v2_arr[2] > v1_arr[2] 
-  )
+export const compareVersion = (version1:string,version2:string)=>{
+  const v1 = version1.split('.')
+  const v2 = version2.split('.')
+  for (var i = 0; i < Math.max(v1.length, v2.length); i++) {
+    var num1 = i < v1.length ? parseInt(v1[i], 10) : 0;
+    var num2 = i < v2.length ? parseInt(v2[i], 10) : 0;
+
+    if (num1 > num2) {
+        return true;
+    } else if (num1 < num2) {
+        return false;
+    }
+}
+
+  return false;
 }
