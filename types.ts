@@ -3,7 +3,8 @@ export interface Options {
   owner:string,
   repo:string,
   access_token:string,
-  ref:string
+  ref:string,
+  proxy?:string
 }
 
 

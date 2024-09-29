@@ -17,7 +17,7 @@ async function main() {
     owner:env.owner,
     repo:env.repo,
     access_token:env.access_token,
-    ref:'version'
+    ref:'main'
   });
 
   // await createRelease({versionName:'1.2.2',body:{title:'测试',url:'123',platform:'android'}})
