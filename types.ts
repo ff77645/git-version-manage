@@ -4,18 +4,17 @@ export interface Options {
   repo:string,
   access_token:string,
   ref:string,
-  proxy?:string
 }
 
 
-type PlatformOptions = 'android' | 'ios'
+// type PlatformOptions = 'android' | 'ios'
 export interface CreateReleaseParams {
   versionName:string,
   prerelease?:boolean,
   body:{
     title:string,
     url:string,
-    platform:PlatformOptions,
+    // platform:PlatformOptions,
     content?:string,
   }
 }

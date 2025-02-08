@@ -18,7 +18,7 @@ class Logger {
   }
 }
 
-class Gvm {
+export class Gvm {
   options!: Options;
   client!:AxiosInstance;
   static _instance: Gvm;
@@ -26,27 +26,12 @@ class Gvm {
   constructor(options:Options) {
     if (Gvm._instance instanceof Gvm) return Gvm._instance;
     this.options = options
-    const url = `${BASE_URL}/${options.owner}/${options.repo}`
-    const baseURL = options.proxy ? `${options.proxy}/${url}` : url
+    const baseURL = `${BASE_URL}/${options.owner}/${options.repo}`
     this.client = axios.create({
       baseURL
     })
     this.client.interceptors.response.use(response=>response.data,err=>Promise.reject(err))
     Gvm._instance = this;
-  }
-
-  clearCache(){
-    const options = this.options
-    axios.delete(`${options.proxy}/cache-clear`,{
-      params:{
-        url:`${BASE_URL}/${options.owner}/${options.repo}/releases`
-      }
-    })
-    axios.delete(`${options.proxy}/cache-clear`,{
-      params:{
-        url:`${BASE_URL}/${options.owner}/${options.repo}/releases/latest`
-      }
-    })
   }
 
   /**
@@ -59,16 +44,15 @@ class Gvm {
   ): Promise<Record<string, any>> {
     const {versionName,body,prerelease=false} = data
     const params = {
+      access_token:this.options.access_token,
       tag_name:formatVersionName(versionName),
       name:body.title,
       body:JSON.stringify(body),
       prerelease:prerelease,
-      access_token:this.options.access_token,
       target_commitish:this.options.ref
     }
  
     const res = await this.client.post('/releases',params)
-    if(this.options.proxy) this.clearCache()
     return res
   }
 
@@ -86,7 +70,6 @@ class Gvm {
     }
 
     const res = await this.client.delete(`/releases/${data.id}`,{params})
-    if(this.options.proxy) this.clearCache()
     return res
   }
 
